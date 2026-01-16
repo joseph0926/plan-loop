@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "plan-loop": {
+      "command": "node",
+      "args": ["/Users/kimyounghoon/Downloads/@kyh/plan-loop/plan-loop-mcp/dist/index.js"]
+    }
+  }
+}
