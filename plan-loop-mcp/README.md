@@ -2,9 +2,43 @@
 
 Claude-Code(계획 설계자)와 Codex(계획 검토자) 간의 비동기 협업을 위한 MCP 서버.
 
+## Quick Start
+
+### 1. 설치 및 설정 (권장)
+
+```bash
+# Claude Code + Codex 모두 설정 (설치 없이 바로 실행)
+npx @joseph0926/plan-loop setup
+
+# 또는 글로벌 설치 후 사용
+npm install -g @joseph0926/plan-loop
+plan-loop setup
+```
+
+### 2. 설정 옵션
+
+```bash
+plan-loop setup                    # Claude (project) + Codex (user) 모두 설정
+plan-loop setup --claude           # Claude Code만 (project scope)
+plan-loop setup --claude --user    # Claude Code (user scope, ~/.claude.json)
+plan-loop setup --codex            # Codex만 (user scope)
+```
+
+### 3. 설정 확인
+
+```bash
+# Claude Code에서
+claude mcp list   # 또는 IDE 내에서 /mcp
+
+# Codex에서
+codex mcp list    # 또는 IDE 내에서 /mcp
+```
+
+---
+
 ## 개요
 
-두 개의 독립된 Claude 세션이 전역 상태 파일(`~/.plan-loop/sessions/`)을 통해 계획-검토-피드백 루프를 수행합니다.
+두 개의 독립된 에이전트 세션이 전역 상태 파일(`~/.plan-loop/sessions/`)을 통해 계획-검토-피드백 루프를 수행합니다.
 
 ```
 [Claude-Code 터미널]          [Codex 터미널]
@@ -17,7 +51,7 @@ Claude-Code(계획 설계자)와 Codex(계획 검토자) 간의 비동기 협업
                    └── {session_id}.json
 ```
 
-## 설치
+## 수동 설치 (개발용)
 
 ```bash
 cd plan-loop-mcp
@@ -25,19 +59,29 @@ npm install
 npm run build
 ```
 
-## Claude Code 설정
+### Claude Code 수동 설정
 
-`~/.claude/settings.json` 또는 프로젝트 `.mcp.json`에 추가:
+`~/.claude.json` 또는 프로젝트 `.mcp.json`에 추가:
 
 ```json
 {
   "mcpServers": {
     "plan-loop": {
-      "command": "node",
-      "args": ["/absolute/path/to/plan-loop-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@joseph0926/plan-loop"]
     }
   }
 }
+```
+
+### Codex 수동 설정
+
+`~/.codex/config.toml`에 추가:
+
+```toml
+[mcp_servers.plan-loop]
+command = "npx"
+args = ["-y", "@joseph0926/plan-loop"]
 ```
 
 ## 도구 목록

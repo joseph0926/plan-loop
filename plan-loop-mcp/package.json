@@ -1,25 +1,47 @@
 {
-  "name": "plan-loop-mcp",
+  "name": "@joseph0926/plan-loop",
   "version": "1.0.0",
-  "description": "MCP server for Claude-Code and Codex async collaboration",
+  "description": "MCP server for Claude-Code and Codex async collaboration with CLI setup",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "plan-loop": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
     "claude",
-    "plan-loop"
+    "codex",
+    "plan-loop",
+    "cli"
   ],
-  "author": "",
+  "author": "joseph0926",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joseph0926/plan-loop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joseph0926/plan-loop/issues"
+  },
+  "homepage": "https://github.com/joseph0926/plan-loop#readme",
   "dependencies": {
+    "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
