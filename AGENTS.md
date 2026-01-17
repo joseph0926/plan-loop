@@ -163,5 +163,5 @@ pl_get_plan 호출
 
 ## 참조
 
-- [plan-loop-mcp/README.md](plan-loop-mcp/README.md) - MCP 서버 상세 문서
-- [plan-loop-mcp/templates/feedback-templates.md](plan-loop-mcp/templates/feedback-templates.md) - 피드백 템플릿 원본
+- [README.ko.md](README.ko.md) - MCP 서버 상세 문서
+- [templates/feedback-templates.md](templates/feedback-templates.md) - 피드백 템플릿 원본

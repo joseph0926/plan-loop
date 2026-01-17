@@ -4,32 +4,52 @@ Plan Loop는 Claude-Code(설계자)와 Codex(검토자) 간의 비동기 계획 
 
 ## 저장소 구조
 
-- plan-loop-mcp/: MCP 서버 (Node.js + TypeScript)
-- .mcp.json: 프로젝트 MCP 서버 등록 예시
+- src/: MCP 서버 소스 코드 (Node.js + TypeScript)
+- .mcp.json.example: MCP 서버 설정 샘플 (`.mcp.json`으로 복사하여 사용)
 
 ## 빠른 시작
 
-1) 서버 빌드
+1) 설치 및 설정 (권장)
 
 ```bash
-cd plan-loop-mcp
-npm install
-npm run build
+# npx로 1회 실행 (설치 불필요)
+npx @joseph0926/plan-loop setup
+
+# 또는 글로벌 설치
+npm install -g @joseph0926/plan-loop
+plan-loop setup
 ```
 
-2) MCP 서버 등록
+### 설정 옵션
 
-MCP 설정 파일(프로젝트 .mcp.json 또는 ~/.claude/settings.json)에 추가:
+```bash
+plan-loop setup                    # Claude (project) + Codex (user) 모두 설정
+plan-loop setup --claude           # Claude Code만 (project scope)
+plan-loop setup --claude --user    # Claude Code (user scope, ~/.claude.json)
+plan-loop setup --codex            # Codex만 (user scope)
+```
+
+2) 수동 등록 (선택)
+
+**Claude Code** - `.mcp.json` (프로젝트) 또는 `~/.claude.json` (사용자)에 추가:
 
 ```json
 {
   "mcpServers": {
     "plan-loop": {
-      "command": "node",
-      "args": ["/absolute/path/to/plan-loop-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@joseph0926/plan-loop"]
     }
   }
 }
+```
+
+**Codex** - `~/.codex/config.toml`에 추가:
+
+```toml
+[mcp_servers.plan-loop]
+command = "npx"
+args = ["-y", "@joseph0926/plan-loop"]
 ```
 
 3) 도구 사용 예시
@@ -84,6 +104,113 @@ pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
 
 세션 파일은 `~/.plan-loop/sessions/`에 저장됩니다.
 
+## 상태 전이
+
+```
+                              pl_start
+                                  │
+                                  ▼
+                            [drafting]
+                                  │
+                             pl_submit
+                                  │
+                                  ▼
+                          [pending_review]
+                                  │
+                            pl_feedback
+                                  │
+        ┌─────────────────────────┼─────────────────────────┐
+        ▼                         ▼                         ▼
+    🔴 / 🟡                      🟢                   iteration >= max
+        │                         │                         │
+        ▼                         ▼                         ▼
+[pending_revision]           [approved]              [exhausted]
+        │                         │                         │
+   pl_submit                  pl_delete               pl_force_approve
+        │                         │                         │
+        ▼                         ▼                         ▼
+[pending_review]              [deleted]               [approved]
+```
+
+## 응답 형식
+
+### 성공 응답 (데이터 있음)
+```typescript
+{ ready: true, data: { ... } }
+```
+
+### 대기 응답 (데이터 없음)
+```typescript
+{ ready: false, reason: "no_plan_submitted" | "no_feedback_yet" | "awaiting_feedback" }
+```
+
+#### Pending reason 매핑
+- `pl_get_plan`: plan 없음 → `no_plan_submitted`
+- `pl_get_feedback`:
+  - plan 없음 → `no_plan_submitted`
+  - 최신 plan에 대한 피드백 대기 → `awaiting_feedback`
+  - 기타 피드백 없음 → `no_feedback_yet`
+
+### 에러 응답
+```typescript
+{
+  isError: true,
+  content: [{ type: "text", text: "Invalid state: current='approved', expected=['drafting']" }]
+}
+```
+
+## 세션 관리
+
+### pl_list 필터링 및 정렬
+
+```
+// status 필터
+> pl_list({ status: "approved" })
+> pl_list({ status: ["drafting", "pending_review"] })
+
+// 정렬
+> pl_list({ sort: "createdAt", order: "asc" })
+> pl_list({ sort: "updatedAt", order: "desc" })  // 기본값
+```
+
+### pl_delete 세션 삭제
+
+```
+// approved/exhausted 세션 삭제
+> pl_delete({ session_id: "abc123" })
+
+// 활성 세션 삭제 (force 필요)
+> pl_delete({ session_id: "abc123", force: true })
+```
+
+## 버전 규칙
+
+| 필드 | 증가 시점 |
+|------|-----------|
+| `version` | `pl_submit` 호출 시 +1 |
+| `iteration` | `pl_feedback`에서 🔴/🟡 시 +1 |
+
+`maxIterations`는 기본값 5이며 **1 이상의 정수**만 허용됩니다.
+
+## 설계 결정
+
+### 최신 plan 자동 매핑
+- `pl_feedback`은 항상 최신 plan에 매핑됨
+- planVersion 파라미터 없음 (단순화)
+- **Trade-off**: 동시 호출 시 race condition 가능 → 운영 규칙으로 관리
+
+### 역할 구분
+- 서버는 호출자를 검증하지 않음
+- Claude-Code는 submit 계열, Codex는 feedback 계열 사용 (약속)
+
+### 상태 영속화
+- `~/.plan-loop/sessions/{id}.json`
+- Atomic write (temp → rename)
+
+### goal 길이 제한
+- `pl_list` 응답에서 goal은 30자(UTF-16 코드 유닛 기준) 초과 시 `...` 추가
+- 최대 33자 (30자 + "...")
+
 ## 개발
 
 ```bash
@@ -91,9 +218,27 @@ npm run dev
 npm run build
 ```
 
-## 상세 문서
+## 샘플 설정 파일
 
-전체 프로토콜 상세 및 예시는 `plan-loop-mcp/README.md` 참조.
+프로젝트에 MCP 설정을 추가하려면:
+
+```bash
+cp .mcp.json.example .mcp.json
+```
+
+## 테스트
+
+```bash
+npm test              # 테스트 실행
+npm run test:watch    # 워치 모드
+npm run test:coverage # 커버리지 리포트
+```
+
+테스트 격리를 위해 `PLAN_LOOP_STATE_DIR` 환경변수를 지원합니다:
+
+```bash
+PLAN_LOOP_STATE_DIR=/tmp/test-sessions npm test
+```
 
 ## 라이선스
 

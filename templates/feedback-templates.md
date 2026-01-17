@@ -167,5 +167,5 @@ Plan Loop에서 `pl_feedback` 호출 시 사용하는 피드백 템플릿입니�
 
 ## 참조
 
-- [AGENTS.md](../../AGENTS.md) - 에이전트별 역할 및 워크플로우
-- [plan-loop-mcp/README.md](../README.md) - MCP 서버 문서
+- [AGENTS.md](../AGENTS.md) - 에이전트별 역할 및 워크플로우
+- [README.ko.md](../README.ko.md) - MCP 서버 문서

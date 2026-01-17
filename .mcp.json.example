@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "plan-loop": {
+      "command": "npx",
+      "args": ["-y", "@joseph0926/plan-loop"]
+    }
+  }
+}

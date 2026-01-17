@@ -4,32 +4,52 @@ Plan Loop is an MCP server that enables an asynchronous plan review loop between
 
 ## Repository layout
 
-- plan-loop-mcp/: MCP server (Node.js + TypeScript)
-- .mcp.json: sample project MCP server registration
+- src/: MCP server source code (Node.js + TypeScript)
+- .mcp.json.example: sample MCP server configuration (copy to `.mcp.json` to use)
 
 ## Quick start
 
-1) Build the server
+1) Install & setup (recommended)
 
 ```bash
-cd plan-loop-mcp
-npm install
-npm run build
+# Run once with npx (no install)
+npx @joseph0926/plan-loop setup
+
+# Or install globally
+npm install -g @joseph0926/plan-loop
+plan-loop setup
 ```
 
-2) Register the MCP server
+### Setup options
 
-Add the following to your MCP settings (project .mcp.json or ~/.claude/settings.json):
+```bash
+plan-loop setup                    # Setup both Claude (project) + Codex (user)
+plan-loop setup --claude           # Claude Code only (project scope)
+plan-loop setup --claude --user    # Claude Code (user scope, ~/.claude.json)
+plan-loop setup --codex            # Codex only (user scope)
+```
+
+2) Manual registration (optional)
+
+**Claude Code** - Add to `.mcp.json` (project) or `~/.claude.json` (user):
 
 ```json
 {
   "mcpServers": {
     "plan-loop": {
-      "command": "node",
-      "args": ["/absolute/path/to/plan-loop-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@joseph0926/plan-loop"]
     }
   }
 }
+```
+
+**Codex** - Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.plan-loop]
+command = "npx"
+args = ["-y", "@joseph0926/plan-loop"]
 ```
 
 3) Use tools (example)
@@ -91,9 +111,13 @@ npm run dev
 npm run build
 ```
 
-## More details
+## Sample configuration
 
-See `plan-loop-mcp/README.md` for full protocol details and examples.
+To add MCP configuration to your project:
+
+```bash
+cp .mcp.json.example .mcp.json
+```
 
 ## License
 
