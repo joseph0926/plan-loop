@@ -53,6 +53,33 @@ pl_feedback({ session_id: "abc123", rating: "🟢", content: "LGTM" })
 - pl_delete: delete a session
 - pl_force_approve: approve an exhausted session
 
+## Agent Collaboration
+
+Claude-Code (planner) and Codex (reviewer) collaborate to review plans.
+
+### Quick Start
+
+```text
+# 1. Claude-Code: Start session and submit plan
+pl_start({ goal: "Implement login feature" })
+pl_submit({ session_id: "...", plan: "1. DB schema..." })
+
+# 2. Codex: Fetch plan and provide feedback
+pl_get_plan({ session_id: "..." })
+pl_feedback({ session_id: "...", rating: "🟡", content: "Please specify auth method" })
+
+# 3. Claude-Code: Check feedback and revise
+pl_get_feedback({ session_id: "..." })
+pl_submit({ session_id: "...", plan: "Revised plan..." })
+
+# 4. Codex: Approve
+pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
+```
+
+### Detailed Agent Guidelines
+
+See [AGENTS.md](AGENTS.md) for detailed workflows and feedback auto-completion guide.
+
 ## State storage
 
 Session files are stored under `~/.plan-loop/sessions/`.
