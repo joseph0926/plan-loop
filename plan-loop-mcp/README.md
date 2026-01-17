@@ -50,8 +50,9 @@ npm run build
 | `pl_feedback` | Codex | 피드백 제출 |
 | `pl_get_feedback` | Claude-Code | 피드백 조회 |
 | `pl_status` | 양쪽 | 세션 상태 조회 |
-| `pl_list` | 양쪽 | 전체 세션 목록 |
+| `pl_list` | 양쪽 | 전체 세션 목록 (필터/정렬 지원) |
 | `pl_force_approve` | 양쪽 | exhausted 상태에서 강제 승인 |
+| `pl_delete` | 양쪽 | 세션 삭제 |
 
 ## 상태 전이
 
@@ -74,11 +75,41 @@ npm run build
         │                         │                         │
         ▼                         ▼                         ▼
 [pending_revision]           [approved]              [exhausted]
-        │                                                   │
-   pl_submit                                        pl_force_approve
-        │                                                   │
-        ▼                                                   ▼
-[pending_review]                                      [approved]
+        │                         │                         │
+   pl_submit                  pl_delete               pl_force_approve
+        │                         │                         │
+        ▼                         ▼                         ▼
+[pending_review]              [deleted]               [approved]
+```
+
+## 세션 관리
+
+### pl_list 필터링 및 정렬
+
+```
+// status 필터
+> pl_list({ status: "approved" })
+> pl_list({ status: ["drafting", "pending_review"] })
+
+// 정렬
+> pl_list({ sort: "createdAt", order: "asc" })
+> pl_list({ sort: "updatedAt", order: "desc" })  // 기본값
+```
+
+### pl_delete 세션 삭제
+
+```
+// approved/exhausted 세션 삭제
+> pl_delete({ session_id: "abc123" })
+{ deleted: true, session_id: "abc123" }
+
+// 활성 세션 삭제 (force 필요)
+> pl_delete({ session_id: "abc123", force: true })
+{ deleted: true, session_id: "abc123" }
+
+// 활성 세션 삭제 시도 (force 없이)
+> pl_delete({ session_id: "abc123" })
+// Error: Cannot delete active session (status='drafting'). Use force=true to override
 ```
 
 ## 사용 예시
@@ -174,6 +205,20 @@ npm run build
 ### goal 길이 제한
 - `pl_list` 응답에서 goal은 30자(UTF-16 코드 유닛 기준) 초과 시 `...` 추가
 - 최대 33자 (30자 + "...")
+
+## 테스트
+
+```bash
+npm test              # 테스트 실행
+npm run test:watch    # 워치 모드
+npm run test:coverage # 커버리지 리포트
+```
+
+테스트 격리를 위해 `PLAN_LOOP_STATE_DIR` 환경변수를 지원합니다:
+
+```bash
+PLAN_LOOP_STATE_DIR=/tmp/test-sessions npm test
+```
 
 ## 라이선스
 

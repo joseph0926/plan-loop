@@ -49,7 +49,8 @@ pl_feedback({ session_id: "abc123", rating: "🟢", content: "LGTM" })
 - pl_feedback: submit feedback for the latest plan
 - pl_get_feedback: fetch the latest feedback
 - pl_status: fetch full session data
-- pl_list: list all sessions
+- pl_list: list all sessions (with filter/sort)
+- pl_delete: delete a session
 - pl_force_approve: approve an exhausted session
 
 ## State storage

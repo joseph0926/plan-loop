@@ -49,7 +49,8 @@ pl_feedback({ session_id: "abc123", rating: "🟢", content: "승인" })
 - pl_feedback: 최신 계획에 대한 피드백 제출
 - pl_get_feedback: 최신 피드백 조회
 - pl_status: 세션 전체 상태 조회
-- pl_list: 전체 세션 목록
+- pl_list: 전체 세션 목록 (필터/정렬 지원)
+- pl_delete: 세션 삭제
 - pl_force_approve: exhausted 세션 강제 승인
 
 ## 상태 저장 위치

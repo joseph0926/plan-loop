@@ -131,10 +131,28 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'pl_list',
-    description: 'List all plan loop sessions',
+    description: 'List all plan loop sessions. Supports filtering by status and sorting.',
     inputSchema: {
       type: 'object' as const,
-      properties: {},
+      properties: {
+        status: {
+          oneOf: [
+            { type: 'string', enum: ['drafting', 'pending_review', 'pending_revision', 'approved', 'exhausted'] },
+            { type: 'array', items: { type: 'string', enum: ['drafting', 'pending_review', 'pending_revision', 'approved', 'exhausted'] } },
+          ],
+          description: 'Filter by status (single value or array)',
+        },
+        sort: {
+          type: 'string',
+          enum: ['createdAt', 'updatedAt'],
+          description: 'Sort field (default: updatedAt)',
+        },
+        order: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Sort order (default: desc)',
+        },
+      },
     },
   },
   {
@@ -153,6 +171,24 @@ const TOOL_DEFINITIONS = [
         },
       },
       required: ['session_id', 'reason'],
+    },
+  },
+  {
+    name: 'pl_delete',
+    description: 'Delete a session. By default only approved/exhausted sessions can be deleted. Use force=true to delete active sessions.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        session_id: {
+          type: 'string',
+          description: 'Session ID',
+        },
+        force: {
+          type: 'boolean',
+          description: 'Force delete even if session is active (default: false)',
+        },
+      },
+      required: ['session_id'],
     },
   },
 ];
@@ -197,10 +233,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return tools.plStatus(input as Parameters<typeof tools.plStatus>[0]);
 
     case 'pl_list':
-      return tools.plList();
+      return tools.plList(input as Parameters<typeof tools.plList>[0]);
 
     case 'pl_force_approve':
       return tools.plForceApprove(input as Parameters<typeof tools.plForceApprove>[0]);
+
+    case 'pl_delete':
+      return tools.plDelete(input as Parameters<typeof tools.plDelete>[0]);
 
     default:
       return {

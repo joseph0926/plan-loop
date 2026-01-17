@@ -11,7 +11,9 @@ import type {
   PlFeedbackInput,
   PlGetFeedbackInput,
   PlStatusInput,
+  PlListInput,
   PlForceApproveInput,
+  PlDeleteInput,
   Response,
   Plan,
   Feedback,
@@ -270,12 +272,22 @@ export function plStatus(input: PlStatusInput) {
 
 /**
  * pl_list - List all sessions
+ * Supports filtering by status and sorting
  */
-export function plList() {
-  const sessions = state.list();
+export function plList(input: PlListInput = {}) {
+  const { status, sort, order } = input;
+
+  const sessions = state.list({ status, sort, order });
+
+  // Remove timestamps from response (keep backward compatible)
+  const sessionsWithoutTimestamps = sessions.map(({ id, goal, status }) => ({
+    id,
+    goal,
+    status,
+  }));
 
   return successResponse({
-    sessions,
+    sessions: sessionsWithoutTimestamps,
   });
 }
 
@@ -319,5 +331,41 @@ export function plForceApprove(input: PlForceApproveInput) {
 
   return successResponse({
     status: 'approved' as const,
+  });
+}
+
+/**
+ * pl_delete - Delete a session
+ * By default, only allows deleting approved/exhausted sessions
+ * Use force=true to delete active sessions
+ */
+export function plDelete(input: PlDeleteInput) {
+  const { session_id, force = false } = input;
+
+  if (!isNonEmptyString(session_id)) {
+    return errorResponse('session_id is required');
+  }
+
+  const session = state.load(session_id);
+  if (!session) {
+    return errorResponse(`Session not found: ${session_id}`);
+  }
+
+  // Check if session can be deleted
+  const safeStates = ['approved', 'exhausted'];
+  if (!safeStates.includes(session.status) && !force) {
+    return errorResponse(
+      `Cannot delete active session (status='${session.status}'). Use force=true to override`
+    );
+  }
+
+  const deleted = state.remove(session_id);
+  if (!deleted) {
+    return errorResponse(`Failed to delete session: ${session_id}`);
+  }
+
+  return successResponse({
+    deleted: true,
+    session_id,
   });
 }

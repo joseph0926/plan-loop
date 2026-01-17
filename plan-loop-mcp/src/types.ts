@@ -89,9 +89,20 @@ export interface PlStatusInput {
   session_id: string;
 }
 
+export interface PlListInput {
+  status?: SessionStatus | SessionStatus[];  // 선택적 필터
+  sort?: 'createdAt' | 'updatedAt';          // 기본: updatedAt
+  order?: 'asc' | 'desc';                     // 기본: desc
+}
+
 export interface PlForceApproveInput {
   session_id: string;
   reason: string;
+}
+
+export interface PlDeleteInput {
+  session_id: string;
+  force?: boolean;  // approved/exhausted 외 상태에서도 삭제 허용
 }
 
 // Tool output types
@@ -119,4 +130,9 @@ export interface PlListOutput {
     goal: string;  // 30자(UTF-16 기준) 초과 시 "..." 추가 (최대 33자)
     status: SessionStatus;
   }[];
+}
+
+export interface PlDeleteOutput {
+  deleted: true;
+  session_id: string;
 }
