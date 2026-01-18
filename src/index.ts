@@ -11,7 +11,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-import * as tools from './tools.js';
+import * as tools from '@joseph0926/plan-loop-core/tools';
 
 // Create server instance
 const server = new Server(

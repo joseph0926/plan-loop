@@ -1,0 +1,110 @@
+{
+  "name": "plan-loop-vscode",
+  "displayName": "Plan Loop",
+  "description": "VSCode extension for Plan Loop MCP - visualize and manage plan review sessions",
+  "version": "0.1.0",
+  "publisher": "joseph0926",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "plan-loop",
+    "mcp",
+    "claude",
+    "codex",
+    "planning"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "plan-loop",
+          "title": "Plan Loop",
+          "icon": "media/plan-loop.svg"
+        }
+      ]
+    },
+    "views": {
+      "plan-loop": [
+        {
+          "id": "planLoopSessions",
+          "name": "Sessions",
+          "icon": "$(list-tree)",
+          "contextualTitle": "Plan Loop Sessions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "planLoop.refresh",
+        "title": "Refresh Sessions",
+        "icon": "$(refresh)",
+        "category": "Plan Loop"
+      },
+      {
+        "command": "planLoop.newSession",
+        "title": "New Session",
+        "icon": "$(add)",
+        "category": "Plan Loop"
+      },
+      {
+        "command": "planLoop.viewSession",
+        "title": "View Session Details",
+        "category": "Plan Loop"
+      },
+      {
+        "command": "planLoop.deleteSession",
+        "title": "Delete Session",
+        "icon": "$(trash)",
+        "category": "Plan Loop"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "planLoop.refresh",
+          "when": "view == planLoopSessions",
+          "group": "navigation"
+        },
+        {
+          "command": "planLoop.newSession",
+          "when": "view == planLoopSessions",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "planLoop.viewSession",
+          "when": "view == planLoopSessions && viewItem == session",
+          "group": "inline"
+        },
+        {
+          "command": "planLoop.deleteSession",
+          "when": "view == planLoopSessions && viewItem == session",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run bundle",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "pnpm run build -- --watch",
+    "package": "pnpm run bundle && vsce package --no-dependencies",
+    "publish": "pnpm run bundle && vsce publish --no-dependencies",
+    "test": "echo 'No tests configured yet'"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
+}

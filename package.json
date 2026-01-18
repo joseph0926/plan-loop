@@ -1,6 +1,7 @@
 {
   "name": "@joseph0926/plan-loop",
   "version": "1.0.1",
+  "packageManager": "pnpm@10.28.0",
   "description": "MCP server for Claude-Code and Codex async collaboration with CLI setup",
   "type": "module",
   "main": "dist/index.js",
@@ -15,13 +16,16 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "turbo run build && pnpm run build:mcp",
+    "build:mcp": "tsc",
+    "build:packages": "turbo run build",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "test": "vitest run",
+    "test": "turbo run test",
+    "test:mcp": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build:mcp"
   },
   "keywords": [
     "mcp",
@@ -42,11 +46,13 @@
   "homepage": "https://github.com/joseph0926/plan-loop#readme",
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "@joseph0926/plan-loop-core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^2.0.0",
+    "turbo": "^2.0.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"
   }

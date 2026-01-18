@@ -1,3 +1,24 @@
 node_modules
 dist
 .mcp.json
+
+# Turbo/TS build artifacts
+.turbo
+*.tsbuildinfo
+coverage
+
+# VSCode extension artifacts
+.vscode-test
+*.vsix
+
+# Local session context
+.contexts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
