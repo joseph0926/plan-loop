@@ -1,44 +1,20 @@
 {
-  "name": "@joseph0926/plan-loop",
+  "name": "plan-loop-workspace",
   "version": "1.0.3",
+  "private": true,
   "packageManager": "pnpm@10.28.0",
-  "description": "MCP server for Claude-Code and Codex async collaboration with CLI setup",
-  "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "plan-loop": "./dist/cli.js"
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "description": "Plan Loop monorepo workspace",
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "turbo run build --filter='./packages/*' && pnpm run build:mcp",
-    "build:mcp": "tsc",
-    "build:packages": "turbo run build --filter='./packages/*'",
-    "start": "node dist/index.js",
-    "dev": "tsc --watch",
-    "test": "turbo run test --filter='./packages/*' && pnpm run test:mcp",
-    "test:mcp": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "pnpm run build:mcp",
+    "build": "turbo run build --filter='./packages/*'",
+    "dev": "turbo run dev --filter='./packages/*'",
+    "test": "turbo run test --filter='./packages/*'",
     "changeset": "changeset",
     "changeset:v": "changeset version",
     "changeset:r": "changeset publish"
   },
-  "keywords": [
-    "mcp",
-    "claude",
-    "codex",
-    "plan-loop",
-    "cli"
-  ],
-  "author": "joseph0926",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/joseph0926/plan-loop.git"
@@ -47,14 +23,6 @@
     "url": "https://github.com/joseph0926/plan-loop/issues"
   },
   "homepage": "https://github.com/joseph0926/plan-loop#readme",
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "@iarna/toml": "^2.2.5",
-    "@joseph0926/plan-loop-core": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.0"
-  },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",

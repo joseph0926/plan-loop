@@ -29,6 +29,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joseph0926/plan-loop",
+    "directory": "packages/core"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

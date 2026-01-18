@@ -4,7 +4,9 @@ Plan Loop는 Claude-Code(설계자)와 Codex(검토자) 간의 비동기 계획 
 
 ## 저장소 구조
 
-- src/: MCP 서버 소스 코드 (Node.js + TypeScript)
+- packages/cli/src/: MCP 서버 소스 코드 (Node.js + TypeScript)
+- packages/core/src/: MCP 코어 라이브러리 (state + tools)
+- packages/vscode/: VSCode 확장 (Marketplace 전용)
 - .mcp.json.example: MCP 서버 설정 샘플 (`.mcp.json`으로 복사하여 사용)
 
 ## 빠른 시작
