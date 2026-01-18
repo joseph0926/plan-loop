@@ -1,6 +1,6 @@
 {
   "name": "@joseph0926/plan-loop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "packageManager": "pnpm@10.28.0",
   "description": "MCP server for Claude-Code and Codex async collaboration with CLI setup",
   "type": "module",
@@ -27,8 +27,8 @@
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "pnpm run build:mcp",
     "changeset": "changeset",
-    "version": "changeset version",
-    "release": "changeset publish"
+    "changeset:v": "changeset version",
+    "changeset:r": "changeset publish"
   },
   "keywords": [
     "mcp",
