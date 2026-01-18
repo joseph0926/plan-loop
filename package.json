@@ -8,9 +8,9 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "turbo run build --filter='./packages/*'",
-    "dev": "turbo run dev --filter='./packages/*'",
-    "test": "turbo run test --filter='./packages/*'",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
     "changeset": "changeset",
     "changeset:v": "changeset version",
     "changeset:r": "changeset publish"
