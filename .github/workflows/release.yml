@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions: {}
+
+jobs:
+  release:
+    # GitHub-hosted runner required (self-hosted not supported for OIDC)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Ensure npm >= 11.5.1 for OIDC
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "Current npm version: $NPM_VERSION"
+          REQUIRED="11.5.1"
+          if [ "$(printf '%s\n' "$REQUIRED" "$NPM_VERSION" | sort -V | head -n1)" != "$REQUIRED" ]; then
+            echo "Upgrading npm to latest..."
+            npm install -g npm@latest
+            echo "New npm version: $(npm --version)"
+          fi
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm run release
+          version: pnpm changeset version
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # OIDC trusted publishing - no NPM_TOKEN needed

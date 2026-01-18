@@ -1,5 +1,6 @@
 {
   "name": "plan-loop-vscode",
+  "private": true,
   "displayName": "Plan Loop",
   "description": "VSCode extension for Plan Loop MCP - visualize and manage plan review sessions",
   "version": "0.2.0",

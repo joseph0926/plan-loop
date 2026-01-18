@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "joseph0926/plan-loop" }
+  ],
+  "commit": false,
+  "fixed": [["@joseph0926/plan-loop", "@joseph0926/plan-loop-core"]],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["plan-loop-vscode"]
+}
