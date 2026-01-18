@@ -1,6 +1,6 @@
 {
   "name": "@joseph0926/plan-loop-core",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Plan Loop MCP core library - state management and tools",
   "type": "module",
   "main": "dist/index.js",
