@@ -130,6 +130,22 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
     }
   }
 
+  /**
+   * Get full session data including plans and feedbacks
+   */
+  getFullSession(sessionId: string): unknown | null {
+    try {
+      const filePath = path.join(this.sessionsDir, `${sessionId}.json`);
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }
+
   deleteSession(sessionId: string): boolean {
     try {
       const filePath = path.join(this.sessionsDir, `${sessionId}.json`);
@@ -163,6 +179,12 @@ export class SessionItem extends vscode.TreeItem {
       this.tooltip = `${session.goal}\n\nStatus: ${session.status}\nVersion: ${session.version}\nIteration: ${session.iteration}/${session.maxIterations}`;
       this.iconPath = getStatusIcon(session.status);
       this.description = session.status;
+      // When clicked, select this session in the Plan Editor
+      this.command = {
+        command: 'planLoop.selectSession',
+        title: 'Select Session',
+        arguments: [this],
+      };
     } else {
       this.contextValue = 'detail';
       this.iconPath = getDetailIcon(session._detailType!);

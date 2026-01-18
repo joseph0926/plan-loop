@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SessionTreeProvider } from './providers/SessionTreeProvider';
+import { PlanEditorProvider } from './providers/PlanEditorProvider';
 import { registerCommands } from './commands';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,14 +14,25 @@ export function activate(context: vscode.ExtensionContext) {
   // Create the tree provider
   const sessionTreeProvider = new SessionTreeProvider();
 
+  // Create the plan editor provider
+  const planEditorProvider = new PlanEditorProvider(context.extensionUri);
+
   // Register the tree view
   const treeView = vscode.window.createTreeView('planLoopSessions', {
     treeDataProvider: sessionTreeProvider,
     showCollapseAll: true,
   });
 
+  // Register the plan editor webview
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      PlanEditorProvider.viewType,
+      planEditorProvider
+    )
+  );
+
   // Register commands
-  registerCommands(context, sessionTreeProvider);
+  registerCommands(context, sessionTreeProvider, planEditorProvider);
 
   // Add to subscriptions
   context.subscriptions.push(treeView);
@@ -33,9 +45,25 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  watcher.onDidCreate(() => sessionTreeProvider.refresh());
-  watcher.onDidChange(() => sessionTreeProvider.refresh());
-  watcher.onDidDelete(() => sessionTreeProvider.refresh());
+  watcher.onDidCreate(() => {
+    sessionTreeProvider.refresh();
+    planEditorProvider.refresh();
+  });
+  watcher.onDidChange(() => {
+    sessionTreeProvider.refresh();
+    planEditorProvider.refresh();
+  });
+  watcher.onDidDelete(() => {
+    sessionTreeProvider.refresh();
+    // Clear editor if current session was deleted
+    const currentId = planEditorProvider.getCurrentSessionId();
+    if (currentId) {
+      const session = sessionTreeProvider.getSession(currentId);
+      if (!session) {
+        planEditorProvider.clear();
+      }
+    }
+  });
 
   context.subscriptions.push(watcher);
 }

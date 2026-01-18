@@ -9,10 +9,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { SessionTreeProvider, SessionItem } from '../providers/SessionTreeProvider';
+import { PlanEditorProvider, Session } from '../providers/PlanEditorProvider';
 
 export function registerCommands(
   context: vscode.ExtensionContext,
-  sessionTreeProvider: SessionTreeProvider
+  sessionTreeProvider: SessionTreeProvider,
+  planEditorProvider: PlanEditorProvider
 ): void {
   // Refresh command
   context.subscriptions.push(
@@ -121,14 +123,33 @@ export function registerCommands(
   // Delete session command
   context.subscriptions.push(
     vscode.commands.registerCommand('planLoop.deleteSession', async (item: SessionItem) => {
-      await deleteSessionWithConfirm(item, sessionTreeProvider);
+      await deleteSessionWithConfirm(item, sessionTreeProvider, planEditorProvider);
+    })
+  );
+
+  // Select session command (shows in Plan Editor)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('planLoop.selectSession', async (item: SessionItem) => {
+      if (!item || item.itemType !== 'session') {
+        return;
+      }
+
+      const session = sessionTreeProvider.getFullSession(item.session.id);
+      if (!session) {
+        vscode.window.showErrorMessage('Session not found');
+        return;
+      }
+
+      // Show session in Plan Editor
+      planEditorProvider.showSession(session as Session);
     })
   );
 }
 
 async function deleteSessionWithConfirm(
   item: SessionItem,
-  sessionTreeProvider: SessionTreeProvider
+  sessionTreeProvider: SessionTreeProvider,
+  planEditorProvider: PlanEditorProvider
 ): Promise<void> {
   if (!item || item.itemType !== 'session') {
     return;
@@ -147,6 +168,11 @@ async function deleteSessionWithConfirm(
     if (confirm !== 'Delete') {
       return;
     }
+  }
+
+  // Clear editor if this session is currently displayed
+  if (planEditorProvider.getCurrentSessionId() === session.id) {
+    planEditorProvider.clear();
   }
 
   const deleted = sessionTreeProvider.deleteSession(session.id);

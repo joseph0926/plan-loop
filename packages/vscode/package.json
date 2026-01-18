@@ -2,7 +2,7 @@
   "name": "plan-loop-vscode",
   "displayName": "Plan Loop",
   "description": "VSCode extension for Plan Loop MCP - visualize and manage plan review sessions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "joseph0926",
   "engines": {
     "vscode": "^1.85.0"
@@ -35,6 +35,12 @@
           "name": "Sessions",
           "icon": "$(list-tree)",
           "contextualTitle": "Plan Loop Sessions"
+        },
+        {
+          "id": "planLoopEditor",
+          "name": "Plan Editor",
+          "type": "webview",
+          "contextualTitle": "Plan Editor"
         }
       ]
     },
@@ -60,6 +66,11 @@
         "command": "planLoop.deleteSession",
         "title": "Delete Session",
         "icon": "$(trash)",
+        "category": "Plan Loop"
+      },
+      {
+        "command": "planLoop.selectSession",
+        "title": "Select Session",
         "category": "Plan Loop"
       }
     ],
