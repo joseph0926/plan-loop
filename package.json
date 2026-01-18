@@ -21,7 +21,7 @@
     "build:packages": "turbo run build --filter='./packages/*'",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "test": "turbo run test",
+    "test": "turbo run test --filter='./packages/*' && pnpm run test:mcp",
     "test:mcp": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
