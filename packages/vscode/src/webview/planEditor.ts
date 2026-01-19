@@ -933,7 +933,7 @@ function getSessionHtml(session: Session): string {
       </div>
     `;
   } else if (session.status === 'drafting') {
-    const examplePrompt = `pl_submit(session_id: "${session.id}", plan: "여기에 plan 작성")`;
+    const examplePrompt = `pl_submit({ session_id: "${session.id}", plan: "여기에 plan 작성" })`;
     feedbackHtml = `
       <div class="drafting-guide">
         <div class="guide-header">🎯 Goal 설정 완료!</div>
