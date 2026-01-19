@@ -5,4 +5,5 @@
 
 export * from './types.js';
 export * as state from './state.js';
+export { isValidSessionId, normalizeSessionId } from './state.js';
 export * from './tools.js';
