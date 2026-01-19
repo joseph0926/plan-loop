@@ -437,6 +437,165 @@ function getStyles(): string {
     .is-hidden {
       display: none;
     }
+
+    /* Workflow progress indicator */
+    .workflow-progress {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 12px 0;
+      font-size: 11px;
+    }
+
+    .workflow-step {
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--vscode-badge-background);
+      opacity: 0.5;
+    }
+
+    .workflow-step.current {
+      opacity: 1;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+    }
+
+    .workflow-step.done {
+      opacity: 0.7;
+    }
+
+    .workflow-step.warning {
+      opacity: 1;
+      background: var(--vscode-inputValidation-warningBackground);
+      border: 1px solid var(--vscode-inputValidation-warningBorder);
+    }
+
+    .workflow-connector {
+      width: 12px;
+      height: 2px;
+      background: var(--vscode-badge-background);
+    }
+
+    /* Drafting guide */
+    .drafting-guide {
+      background: var(--vscode-editor-background);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: 4px;
+      padding: 16px;
+    }
+
+    .guide-header {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .session-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px;
+      background: var(--vscode-textBlockQuote-background);
+      border-radius: 4px;
+    }
+
+    .session-info .label {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .session-id {
+      font-family: var(--vscode-editor-font-family);
+      font-size: 11px;
+      background: var(--vscode-editor-background);
+      padding: 2px 6px;
+      border-radius: 3px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .copy-btn {
+      background: var(--vscode-button-secondaryBackground);
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--vscode-button-secondaryForeground);
+    }
+
+    .copy-btn:hover {
+      background: var(--vscode-button-secondaryHoverBackground);
+    }
+
+    .copy-btn:focus,
+    .copy-btn:focus-visible {
+      outline: 2px solid var(--vscode-focusBorder);
+      outline-offset: 2px;
+    }
+
+    .copy-btn.copied {
+      background: var(--vscode-charts-green);
+      color: var(--vscode-editor-background);
+    }
+
+    .next-steps {
+      margin-bottom: 16px;
+    }
+
+    .next-steps h4 {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .next-steps ol {
+      padding-left: 20px;
+      font-size: 12px;
+    }
+
+    .next-steps li {
+      margin: 4px 0;
+    }
+
+    .example-prompt {
+      background: var(--vscode-textBlockQuote-background);
+      border-radius: 4px;
+      padding: 12px;
+    }
+
+    .example-prompt .label {
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .example-prompt .prompt-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .example-prompt code {
+      font-family: var(--vscode-editor-font-family);
+      font-size: 11px;
+      flex: 1;
+      word-break: break-all;
+    }
+
+    /* Status guide message */
+    .status-guide {
+      font-size: 12px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: var(--vscode-editorInfo-background);
+      border-radius: 4px;
+      color: var(--vscode-foreground);
+    }
   `;
 }
 
@@ -450,6 +609,8 @@ function getScript(nonce: string): string {
 
       let selectedRating = null;
       let isSubmitting = false;
+      let copyRequestSeq = 0;
+      const pendingCopyRequests = new Map();
 
       // Elements
       const ratingBtns = document.querySelectorAll('.rating-btn');
@@ -512,6 +673,54 @@ function getScript(nonce: string): string {
         });
       }
 
+      function markCopySuccess(btn) {
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '📋';
+          btn.classList.remove('copied');
+        }, 1500);
+      }
+
+      function requestClipboardCopy(text, btn) {
+        const requestId = 'copy-' + (++copyRequestSeq);
+        pendingCopyRequests.set(requestId, btn);
+        vscode.postMessage({ type: 'copyToClipboard', text, requestId });
+      }
+
+      // Copy buttons handler
+      function setupCopyButton(btnId, textId) {
+        const btn = document.getElementById(btnId);
+        const textEl = document.getElementById(textId);
+        if (btn && textEl) {
+          const handleCopy = () => {
+            const text = textEl.textContent || '';
+            if (!text) return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(() => {
+                markCopySuccess(btn);
+              }).catch(() => {
+                requestClipboardCopy(text, btn);
+              });
+            } else {
+              requestClipboardCopy(text, btn);
+            }
+          };
+
+          btn.addEventListener('click', handleCopy);
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCopy();
+            }
+          });
+        }
+      }
+
+      setupCopyButton('copy-session-id', 'session-id-text');
+      setupCopyButton('copy-prompt', 'example-prompt-text');
+
       // Handle messages from extension
       window.addEventListener('message', (event) => {
         const message = event.data;
@@ -529,6 +738,15 @@ function getScript(nonce: string): string {
               submitBtn.classList.remove('loading');
             }
             showError(message.error || 'Failed to submit feedback');
+          }
+        } else if (message.type === 'copyResult') {
+          const btn = pendingCopyRequests.get(message.requestId);
+          if (!btn) {
+            return;
+          }
+          pendingCopyRequests.delete(message.requestId);
+          if (message.success) {
+            markCopySuccess(btn);
           }
         }
       });
@@ -559,6 +777,48 @@ function getScript(nonce: string): string {
 }
 
 /**
+ * Get workflow step based on session status
+ */
+function getWorkflowStep(status: SessionStatus): { step: number; warning: boolean } {
+  switch (status) {
+    case 'drafting': return { step: 2, warning: false };
+    case 'pending_review': return { step: 3, warning: false };
+    case 'pending_revision': return { step: 4, warning: false };
+    case 'approved': return { step: 5, warning: false };
+    case 'exhausted': return { step: 4, warning: true };
+    default: return { step: 1, warning: false };
+  }
+}
+
+/**
+ * Render workflow progress indicator
+ */
+function renderWorkflowProgress(status: SessionStatus): string {
+  const { step: currentStep, warning } = getWorkflowStep(status);
+  const steps = ['Goal', 'Plan', 'Review', 'Revise', 'Done'];
+
+  const stepsHtml = steps.map((name, idx) => {
+    const stepNum = idx + 1;
+    let className = 'workflow-step';
+    let ariaLabel = name;
+
+    if (stepNum < currentStep) {
+      className += ' done';
+      ariaLabel += ' (완료)';
+    } else if (stepNum === currentStep) {
+      className += warning ? ' warning' : ' current';
+      ariaLabel += warning ? ' (경고)' : ' (현재)';
+    }
+
+    const connector = stepNum < 5 ? '<div class="workflow-connector" aria-hidden="true"></div>' : '';
+
+    return `<div class="${className}" aria-label="${ariaLabel}">${stepNum}. ${name}</div>${connector}`;
+  }).join('');
+
+  return `<div class="workflow-progress" role="navigation" aria-label="진행 상태">${stepsHtml}</div>`;
+}
+
+/**
  * Generate empty state HTML
  */
 function getEmptyStateHtml(): string {
@@ -579,7 +839,8 @@ function getSessionHtml(session: Session): string {
   const statusLabel = getStatusLabel(session.status);
   const relativeTime = getRelativeTime(session.updatedAt);
 
-  // Header
+  // Header with workflow progress
+  const workflowHtml = renderWorkflowProgress(session.status);
   const headerHtml = `
     <div class="session-header">
       <div class="session-goal">${escapeHtml(session.goal)}</div>
@@ -589,6 +850,7 @@ function getSessionHtml(session: Session): string {
         <span>iter ${session.iteration}/${session.maxIterations}</span>
         <span>Updated: ${relativeTime}</span>
       </div>
+      ${workflowHtml}
     </div>
   `;
 
@@ -618,6 +880,7 @@ function getSessionHtml(session: Session): string {
 
   if (session.status === 'pending_review') {
     feedbackHtml = `
+      <div class="status-guide">📝 Plan이 도착했습니다. 아래에서 리뷰해주세요.</div>
       <div class="feedback-panel">
         <div class="feedback-label">Rate this plan:</div>
         <div class="rating-buttons">
@@ -653,7 +916,7 @@ function getSessionHtml(session: Session): string {
       : '';
     feedbackHtml = `
       <div class="status-message awaiting">
-        Awaiting revised plan...<br>
+        ⏳ 피드백 전달 완료! Claude가 plan 수정 중...<br>
         <small>Last feedback: ${escapeHtml(lastFeedbackSummary)}</small>
       </div>
     `;
@@ -666,13 +929,48 @@ function getSessionHtml(session: Session): string {
   } else if (session.status === 'exhausted') {
     feedbackHtml = `
       <div class="status-message exhausted">
-        ⚠️ Max iterations reached
+        ⚠️ 최대 반복 도달 - Force approve 필요
       </div>
     `;
   } else if (session.status === 'drafting') {
+    const examplePrompt = `pl_submit(session_id: "${session.id}", plan: "여기에 plan 작성")`;
     feedbackHtml = `
-      <div class="status-message awaiting">
-        Waiting for initial plan submission...
+      <div class="drafting-guide">
+        <div class="guide-header">🎯 Goal 설정 완료!</div>
+
+        <div class="session-info">
+          <span class="label">세션 ID:</span>
+          <code class="session-id" id="session-id-text">${escapeHtml(session.id)}</code>
+          <button
+            class="copy-btn"
+            id="copy-session-id"
+            title="세션 ID 복사"
+            aria-label="세션 ID를 클립보드에 복사"
+            tabindex="0"
+          >📋</button>
+        </div>
+
+        <div class="next-steps">
+          <h4>다음 단계</h4>
+          <ol>
+            <li>Claude에게 plan 작성 요청</li>
+            <li>Plan 제출 후 리뷰 가능</li>
+          </ol>
+        </div>
+
+        <div class="example-prompt">
+          <span class="label">예시 프롬프트:</span>
+          <div class="prompt-text">
+            <code id="example-prompt-text">${escapeHtml(examplePrompt)}</code>
+            <button
+              class="copy-btn"
+              id="copy-prompt"
+              title="예시 프롬프트 복사"
+              aria-label="예시 프롬프트를 클립보드에 복사"
+              tabindex="0"
+            >📋</button>
+          </div>
+        </div>
       </div>
     `;
   }

@@ -42,11 +42,13 @@ export interface Session {
 // Message types
 type ExtToWebview =
   | { type: 'session'; data: Session | null }
-  | { type: 'feedbackResult'; success: boolean; error?: string };
+  | { type: 'feedbackResult'; success: boolean; error?: string }
+  | { type: 'copyResult'; requestId: string; success: boolean; error?: string };
 
 type WebviewToExt =
   | { type: 'feedback'; rating: Rating; content: string }
-  | { type: 'openInEditor' };
+  | { type: 'openInEditor' }
+  | { type: 'copyToClipboard'; text: string; requestId: string };
 
 export class PlanEditorProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'planLoopEditor';
@@ -128,6 +130,9 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
       case 'openInEditor':
         this._openSessionInEditor();
         break;
+      case 'copyToClipboard':
+        this._copyToClipboard(message.text, message.requestId);
+        break;
     }
   }
 
@@ -202,9 +207,27 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
       // Send success result
       this._sendFeedbackResult(true);
 
-      // Show notification
+      // Show notification with copy button for non-approved states
       const ratingLabel = rating === '🟢' ? 'Approved' : rating === '🟡' ? 'Minor revision requested' : 'Major revision requested';
-      vscode.window.showInformationMessage(`Plan Loop: ${ratingLabel}`);
+
+      if (rating !== '🟢') {
+        // For revision states, offer to copy the feedback check command
+        const command = `pl_get_feedback(session_id: "${session.id}")`;
+        const result = await vscode.window.showInformationMessage(
+          `Plan Loop: ${ratingLabel}`,
+          'Copy Command'
+        );
+        if (result === 'Copy Command') {
+          try {
+            await vscode.env.clipboard.writeText(command);
+            vscode.window.showInformationMessage('명령어가 클립보드에 복사되었습니다');
+          } catch {
+            vscode.window.showWarningMessage('명령어 복사에 실패했습니다. 수동으로 복사해주세요.');
+          }
+        }
+      } else {
+        vscode.window.showInformationMessage(`Plan Loop: ${ratingLabel}`);
+      }
     } catch (error) {
       this._sendFeedbackResult(false, error instanceof Error ? error.message : 'Unknown error');
     }
@@ -213,6 +236,23 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
   private _sendFeedbackResult(success: boolean, error?: string): void {
     if (this._view) {
       const message: ExtToWebview = { type: 'feedbackResult', success, error };
+      this._view.webview.postMessage(message);
+    }
+  }
+
+  private async _copyToClipboard(text: string, requestId: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(text);
+      this._sendCopyResult(requestId, true);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this._sendCopyResult(requestId, false, errorMessage);
+    }
+  }
+
+  private _sendCopyResult(requestId: string, success: boolean, error?: string): void {
+    if (this._view) {
+      const message: ExtToWebview = { type: 'copyResult', requestId, success, error };
       this._view.webview.postMessage(message);
     }
   }

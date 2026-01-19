@@ -42,22 +42,59 @@ export function registerCommands(
         return; // User cancelled
       }
 
+      let session: Session;
       try {
-        const session = createSession(goal.trim());
+        session = createSession(goal.trim());
         sessionTreeProvider.refresh();
-        vscode.window.showInformationMessage(
-          `Plan Loop: Session created - ${truncate(goal, 30)}`
-        );
-
-        // Copy session ID to clipboard
-        await vscode.env.clipboard.writeText(session.id);
-        vscode.window.showInformationMessage(
-          'Session ID copied to clipboard'
-        );
       } catch (error) {
         vscode.window.showErrorMessage(
           `Failed to create session: ${error instanceof Error ? error.message : String(error)}`
         );
+        return;
+      }
+
+      // Generate command for Claude
+      const command = `pl_submit(session_id: "${session.id}", plan: "여기에 plan 작성")`;
+
+      // Check auto copy setting
+      const config = vscode.workspace.getConfiguration('planLoop');
+      const autoCopy = config.get<boolean>('autoCopyCommand', false);
+
+      if (autoCopy) {
+        // Auto copy enabled: copy command directly
+        try {
+          await vscode.env.clipboard.writeText(command);
+          vscode.window.showInformationMessage(
+            `Plan Loop: 세션 생성 완료! 명령어가 클립보드에 복사되었습니다`
+          );
+        } catch {
+          vscode.window.showWarningMessage(
+            'Plan Loop: 세션은 생성되었지만 명령어 복사에 실패했습니다. 수동으로 복사해주세요.'
+          );
+        }
+      } else {
+        // Auto copy disabled: show notification with copy button
+        const result = await vscode.window.showInformationMessage(
+          `Plan Loop: 세션 생성 완료! - ${truncate(goal, 30)}`,
+          'Copy Command',
+          'Copy Session ID'
+        );
+
+        if (result === 'Copy Command') {
+          try {
+            await vscode.env.clipboard.writeText(command);
+            vscode.window.showInformationMessage('명령어가 클립보드에 복사되었습니다');
+          } catch {
+            vscode.window.showWarningMessage('명령어 복사에 실패했습니다. 수동으로 복사해주세요.');
+          }
+        } else if (result === 'Copy Session ID') {
+          try {
+            await vscode.env.clipboard.writeText(session.id);
+            vscode.window.showInformationMessage('세션 ID가 클립보드에 복사되었습니다');
+          } catch {
+            vscode.window.showWarningMessage('세션 ID 복사에 실패했습니다. 수동으로 복사해주세요.');
+          }
+        }
       }
     })
   );

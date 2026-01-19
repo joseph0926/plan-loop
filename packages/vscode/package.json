@@ -100,6 +100,16 @@
           "group": "inline"
         }
       ]
+    },
+    "configuration": {
+      "title": "Plan Loop",
+      "properties": {
+        "planLoop.autoCopyCommand": {
+          "type": "boolean",
+          "default": false,
+          "description": "세션 생성 시 명령어를 자동으로 클립보드에 복사합니다. 비활성화 시 복사 버튼을 통해 수동으로 복사할 수 있습니다."
+        }
+      }
     }
   },
   "scripts": {
