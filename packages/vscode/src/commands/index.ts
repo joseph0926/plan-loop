@@ -151,7 +151,7 @@ export function registerCommands(
           await vscode.window.showTextDocument(doc);
           break;
         case 'delete':
-          await deleteSessionWithConfirm(item, sessionTreeProvider);
+          await deleteSessionWithConfirm(item, sessionTreeProvider, planEditorProvider);
           break;
       }
     })
