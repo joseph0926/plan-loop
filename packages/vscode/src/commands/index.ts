@@ -54,7 +54,7 @@ export function registerCommands(
       }
 
       // Generate command for Claude
-      const command = `pl_submit(session_id: "${session.id}", plan: "여기에 plan 작성")`;
+      const command = `pl_submit({ session_id: "${session.id}", plan: "여기에 plan 작성" })`;
 
       // Check auto copy setting
       const config = vscode.workspace.getConfiguration('planLoop');
