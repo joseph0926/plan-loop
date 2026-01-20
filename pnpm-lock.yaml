@@ -75,6 +75,10 @@ importers:
         version: 2.1.9(@types/node@20.19.30)
 
   packages/vscode:
+    dependencies:
+      '@joseph0926/plan-loop-core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

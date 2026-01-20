@@ -4,24 +4,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-
-// Session status type
-type SessionStatus = 'drafting' | 'pending_review' | 'pending_revision' | 'approved' | 'exhausted';
-
-// Session interface (simplified for tree view)
-interface Session {
-  id: string;
-  goal: string;
-  status: SessionStatus;
-  version: number;
-  iteration: number;
-  maxIterations: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { state, getStateDir, listFull, type Session, type SessionStatus } from '@joseph0926/plan-loop-core';
 
 export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<SessionItem | undefined | null | void> =
@@ -29,15 +12,10 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
   readonly onDidChangeTreeData: vscode.Event<SessionItem | undefined | null | void> =
     this._onDidChangeTreeData.event;
 
-  private sessionsDir: string;
-
-  constructor() {
-    this.sessionsDir = process.env.PLAN_LOOP_STATE_DIR ||
-      path.join(os.homedir(), '.plan-loop', 'sessions');
-  }
+  constructor() {}
 
   getSessionsDir(): string {
-    return this.sessionsDir;
+    return getStateDir();
   }
 
   refresh(): void {
@@ -59,34 +37,10 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
   }
 
   private getSessions(): SessionItem[] {
-    if (!fs.existsSync(this.sessionsDir)) {
-      return [];
-    }
-
-    try {
-      const files = fs.readdirSync(this.sessionsDir)
-        .filter(f => f.endsWith('.json') && !f.endsWith('.tmp'));
-
-      const sessions: SessionItem[] = files
-        .map(file => {
-          try {
-            const content = fs.readFileSync(path.join(this.sessionsDir, file), 'utf-8');
-            const session: Session = JSON.parse(content);
-            return new SessionItem(session, vscode.TreeItemCollapsibleState.Collapsed);
-          } catch {
-            return null;
-          }
-        })
-        .filter((s): s is SessionItem => s !== null)
-        .sort((a, b) => {
-          // Sort by updatedAt descending
-          return new Date(b.session.updatedAt).getTime() - new Date(a.session.updatedAt).getTime();
-        });
-
-      return sessions;
-    } catch {
-      return [];
-    }
+    // Use listFull() to get full sessions in one pass (no double file reads)
+    // listFull() doesn't create directory if not exists (unlike state.list())
+    const sessions = listFull({ sort: 'updatedAt', order: 'desc' });
+    return sessions.map(session => new SessionItem(session, vscode.TreeItemCollapsibleState.Collapsed));
   }
 
   private getSessionDetails(session: Session): SessionItem[] {
@@ -118,46 +72,22 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<SessionItem>
   }
 
   getSession(sessionId: string): Session | null {
-    try {
-      const filePath = path.join(this.sessionsDir, `${sessionId}.json`);
-      if (!fs.existsSync(filePath)) {
-        return null;
-      }
-      const content = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(content);
-    } catch {
-      return null;
-    }
+    return state.load(sessionId);
   }
 
   /**
    * Get full session data including plans and feedbacks
    */
-  getFullSession(sessionId: string): unknown | null {
-    try {
-      const filePath = path.join(this.sessionsDir, `${sessionId}.json`);
-      if (!fs.existsSync(filePath)) {
-        return null;
-      }
-      const content = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(content);
-    } catch {
-      return null;
-    }
+  getFullSession(sessionId: string): Session | null {
+    return state.load(sessionId);
   }
 
   deleteSession(sessionId: string): boolean {
-    try {
-      const filePath = path.join(this.sessionsDir, `${sessionId}.json`);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        this.refresh();
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
+    const deleted = state.remove(sessionId);
+    if (deleted) {
+      this.refresh();
     }
+    return deleted;
   }
 }
 

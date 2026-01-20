@@ -4,40 +4,12 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import { getWebviewHtml } from '../webview/planEditor';
+import { state, getStateDir, type Session, type Rating, type Feedback } from '@joseph0926/plan-loop-core';
 
-// Session types
-type SessionStatus = 'drafting' | 'pending_review' | 'pending_revision' | 'approved' | 'exhausted';
-type Rating = '🔴' | '🟡' | '🟢';
-
-interface Plan {
-  version: number;
-  content: string;
-  submittedAt: string;
-}
-
-interface Feedback {
-  planVersion: number;
-  rating: Rating;
-  content: string;
-  submittedAt: string;
-}
-
-export interface Session {
-  id: string;
-  goal: string;
-  status: SessionStatus;
-  version: number;
-  iteration: number;
-  maxIterations: number;
-  plans: Plan[];
-  feedbacks: Feedback[];
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export Session type for backwards compatibility with commands/index.ts
+export type { Session } from '@joseph0926/plan-loop-core';
 
 // Message types
 type ExtToWebview =
@@ -55,12 +27,8 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
   private _currentSession?: Session;
-  private _sessionsDir: string;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {
-    this._sessionsDir = process.env.PLAN_LOOP_STATE_DIR ||
-      path.join(os.homedir(), '.plan-loop', 'sessions');
-  }
+  constructor(private readonly _extensionUri: vscode.Uri) {}
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -262,7 +230,7 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    const filePath = path.join(this._sessionsDir, `${this._currentSession.id}.json`);
+    const filePath = path.join(getStateDir(), `${this._currentSession.id}.json`);
     try {
       const doc = await vscode.workspace.openTextDocument(filePath);
       await vscode.window.showTextDocument(doc);
@@ -272,23 +240,11 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
   }
 
   private _loadSession(sessionId: string): Session | null {
-    try {
-      const filePath = path.join(this._sessionsDir, `${sessionId}.json`);
-      if (!fs.existsSync(filePath)) {
-        return null;
-      }
-      const content = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(content);
-    } catch {
-      return null;
-    }
+    return state.load(sessionId);
   }
 
   private _saveSession(session: Session): void {
-    const filePath = path.join(this._sessionsDir, `${session.id}.json`);
-    const tempPath = `${filePath}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(session, null, 2));
-    fs.renameSync(tempPath, filePath);
+    state.save(session);
   }
 
   private _getAutoFeedback(rating: Rating): string {

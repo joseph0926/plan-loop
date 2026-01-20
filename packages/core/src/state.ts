@@ -12,7 +12,7 @@ import type { Session, SessionStatus } from './types.js';
 
 // Support PLAN_LOOP_STATE_DIR env var for test isolation
 // Use function to allow dynamic env var reading
-function getStateDir(): string {
+export function getStateDir(): string {
   return process.env.PLAN_LOOP_STATE_DIR || join(homedir(), '.plan-loop', 'sessions');
 }
 
@@ -73,6 +73,15 @@ function getSecureFilePath(id: string): { filePath: string; normalizedId: string
   }
 
   return { filePath, normalizedId };
+}
+
+/**
+ * Get file path for session (for external use like VSCode extension)
+ * Returns null if session_id is invalid
+ */
+export function getSessionFilePath(id: string): string | null {
+  const result = getSecureFilePath(id);
+  return result ? result.filePath : null;
 }
 
 /**
@@ -156,6 +165,7 @@ export interface ListOptions {
  * List all sessions (summary only)
  * goal is truncated to 30 characters (UTF-16 units) + "..." if exceeded
  * Supports filtering by status and sorting
+ * Note: Creates state directory if it doesn't exist
  */
 export function list(options: ListOptions = {}): { id: string; goal: string; status: SessionStatus; createdAt: string; updatedAt: string }[] {
   ensureDir();
@@ -194,6 +204,51 @@ export function list(options: ListOptions = {}): { id: string; goal: string; sta
         };
       })
       .filter((s): s is NonNullable<typeof s> => s !== null);
+
+    // Sort
+    sessions.sort((a, b) => {
+      const aTime = new Date(a[sort]).getTime();
+      const bTime = new Date(b[sort]).getTime();
+      return order === 'asc' ? aTime - bTime : bTime - aTime;
+    });
+
+    return sessions;
+  } catch (err) {
+    console.error('[plan-loop] Failed to list sessions:', err);
+    return [];
+  }
+}
+
+/**
+ * List all sessions with full data (for VSCode extension)
+ * - Does NOT create state directory if it doesn't exist (returns empty array)
+ * - Returns full Session objects to avoid double file reads
+ * - Supports filtering by status and sorting
+ */
+export function listFull(options: ListOptions = {}): Session[] {
+  const stateDir = getStateDir();
+
+  // Don't create directory, just return empty if not exists
+  if (!existsSync(stateDir)) {
+    return [];
+  }
+
+  const { status, sort = 'updatedAt', order = 'desc' } = options;
+
+  // Normalize status filter to array
+  const statusFilter: SessionStatus[] | null = status
+    ? Array.isArray(status)
+      ? status
+      : [status]
+    : null;
+
+  try {
+    const files = readdirSync(stateDir).filter((f) => f.endsWith('.json') && !f.endsWith('.tmp'));
+
+    let sessions = files
+      .map((f) => load(f.replace('.json', '')))
+      .filter((s): s is Session => s !== null)
+      .filter((s) => !statusFilter || statusFilter.includes(s.status));
 
     // Sort
     sessions.sort((a, b) => {
