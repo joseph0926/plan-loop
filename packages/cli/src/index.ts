@@ -4,6 +4,7 @@
  * Claude-Code와 Codex 간의 비동기 협업을 위한 MCP 서버
  */
 
+import { createRequire } from 'node:module';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -13,11 +14,14 @@ import {
 
 import * as tools from '@joseph0926/plan-loop-core/tools';
 
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
+
 // Create server instance
 const server = new Server(
   {
     name: 'plan-loop-mcp',
-    version: '1.0.0',
+    version: pkg.version,
   },
   {
     capabilities: {
