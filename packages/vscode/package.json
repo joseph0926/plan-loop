@@ -128,5 +128,7 @@
     "esbuild": "^0.20.0",
     "typescript": "^5.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@joseph0926/plan-loop-core": "workspace:*"
+  }
 }

@@ -5,11 +5,9 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as crypto from 'crypto';
+import { state, type Session } from '@joseph0926/plan-loop-core';
 import { SessionTreeProvider, SessionItem } from '../providers/SessionTreeProvider';
-import { PlanEditorProvider, Session } from '../providers/PlanEditorProvider';
+import { PlanEditorProvider } from '../providers/PlanEditorProvider';
 
 export function registerCommands(
   context: vscode.ExtensionContext,
@@ -44,7 +42,7 @@ export function registerCommands(
 
       let session: Session;
       try {
-        session = createSession(goal.trim());
+        session = state.create(goal.trim());
         sessionTreeProvider.refresh();
       } catch (error) {
         vscode.window.showErrorMessage(
@@ -178,7 +176,7 @@ export function registerCommands(
       }
 
       // Show session in Plan Editor
-      planEditorProvider.showSession(session as Session);
+      planEditorProvider.showSession(session);
     })
   );
 }
@@ -218,42 +216,6 @@ async function deleteSessionWithConfirm(
   } else {
     vscode.window.showErrorMessage('Failed to delete session');
   }
-}
-
-// Helper function to create a session (consistent with core package)
-function createSession(goal: string): { id: string; goal: string } {
-  const sessionsDir = process.env.PLAN_LOOP_STATE_DIR ||
-    path.join(os.homedir(), '.plan-loop', 'sessions');
-
-  // Ensure directory exists
-  if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir, { recursive: true });
-  }
-
-  // Use crypto.randomUUID() for consistency with core package
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  const session = {
-    id,
-    goal,
-    status: 'drafting',
-    version: 0,
-    iteration: 0,
-    maxIterations: 5,
-    plans: [],
-    feedbacks: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  // Atomic write: temp file + rename (consistent with core package)
-  const filePath = path.join(sessionsDir, `${id}.json`);
-  const tempPath = `${filePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(session, null, 2));
-  fs.renameSync(tempPath, filePath);
-
-  return { id, goal };
 }
 
 function truncate(str: string, maxLength: number): string {
