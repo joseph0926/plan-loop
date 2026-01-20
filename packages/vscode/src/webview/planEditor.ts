@@ -912,7 +912,7 @@ function getSessionHtml(session: Session): string {
     `;
   } else if (session.status === 'pending_revision') {
     const lastFeedbackSummary = latestFeedback
-      ? `${latestFeedback.rating} ${latestFeedback.content.substring(0, 100)}...`
+      ? `${latestFeedback.rating} ${latestFeedback.content.substring(0, 100)}${latestFeedback.content.length > 100 ? '...' : ''}`
       : '';
     feedbackHtml = `
       <div class="status-message awaiting">
