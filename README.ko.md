@@ -58,10 +58,12 @@ args = ["-y", "@joseph0926/plan-loop"]
 
 ```text
 pl_start({ goal: "로그인 기능 계획" })
-pl_submit({ session_id: "abc123", plan: "1. ..." })
-pl_get_plan({ session_id: "abc123" })
-pl_feedback({ session_id: "abc123", rating: "🟢", content: "LGTM" })
+pl_submit({ session_id: "550e8400-e29b-41d4-a716-446655440000", plan: "1. ..." })
+pl_get_plan({ session_id: "550e8400-e29b-41d4-a716-446655440000" })
+pl_feedback({ session_id: "550e8400-e29b-41d4-a716-446655440000", rating: "🟢", content: "LGTM" })
 ```
+
+**참고**: `session_id`는 UUIDv4 형식이어야 합니다. 입력은 대소문자 구분 없이 받으며 내부적으로 소문자로 정규화됩니다.
 
 ## 도구 목록
 
@@ -179,10 +181,10 @@ pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
 
 ```
 // approved/exhausted 세션 삭제
-> pl_delete({ session_id: "abc123" })
+> pl_delete({ session_id: "550e8400-e29b-41d4-a716-446655440000" })
 
 // 활성 세션 삭제 (force 필요)
-> pl_delete({ session_id: "abc123", force: true })
+> pl_delete({ session_id: "550e8400-e29b-41d4-a716-446655440000", force: true })
 ```
 
 ## 버전 규칙
