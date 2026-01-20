@@ -102,6 +102,21 @@ pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
 
 See [AGENTS.md](AGENTS.md) for detailed workflows and feedback auto-completion guide.
 
+### Optimistic Concurrency with plan_version
+
+`pl_feedback` supports an optional `plan_version` parameter to prevent race conditions in multi-agent workflows:
+
+```text
+# Without plan_version (default behavior)
+pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
+
+# With plan_version for race condition prevention
+pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM", plan_version: 1 })
+# → On mismatch: "Plan version mismatch: expected=2, provided=1"
+```
+
+**Note**: `plan_version` is a 1-based integer (first plan is version=1).
+
 ## State storage
 
 Session files are stored under `~/.plan-loop/sessions/`.

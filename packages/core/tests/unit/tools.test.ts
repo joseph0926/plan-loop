@@ -195,6 +195,58 @@ describe('tools module', () => {
 
       expect(result.isError).toBe(true);
     });
+
+    it('should succeed when plan_version matches', () => {
+      const startResult = tools.plStart({ goal: 'Test goal' });
+      const { session_id } = parseResponse(startResult);
+
+      tools.plSubmit({ session_id, plan: 'Plan v1' });
+
+      const result = tools.plFeedback({ session_id, rating: '🟢', content: 'LGTM', plan_version: 1 });
+      const data = parseResponse(result);
+
+      expect(data.status).toBe('approved');
+    });
+
+    it('should error when plan_version does not match', () => {
+      const startResult = tools.plStart({ goal: 'Test goal' });
+      const { session_id } = parseResponse(startResult);
+
+      tools.plSubmit({ session_id, plan: 'Plan v1' });
+
+      // Try to submit feedback for version 0 (wrong version)
+      const result = tools.plFeedback({ session_id, rating: '🟢', content: 'LGTM', plan_version: 0 });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Plan version mismatch');
+      expect(result.content[0].text).toContain('expected=1');
+      expect(result.content[0].text).toContain('provided=0');
+    });
+
+    it('should work without plan_version (backward compatibility)', () => {
+      const startResult = tools.plStart({ goal: 'Test goal' });
+      const { session_id } = parseResponse(startResult);
+
+      tools.plSubmit({ session_id, plan: 'Plan v1' });
+
+      // No plan_version provided - should work as before
+      const result = tools.plFeedback({ session_id, rating: '🟡', content: 'Needs work' });
+      const data = parseResponse(result);
+
+      expect(data.status).toBe('pending_revision');
+    });
+
+    it('should error on invalid plan_version type', () => {
+      const startResult = tools.plStart({ goal: 'Test goal' });
+      const { session_id } = parseResponse(startResult);
+
+      tools.plSubmit({ session_id, plan: 'Plan' });
+
+      const result = tools.plFeedback({ session_id, rating: '🟢', content: 'OK', plan_version: 1.5 });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('plan_version must be an integer');
+    });
   });
 
   describe('plGetFeedback', () => {

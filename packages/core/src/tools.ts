@@ -145,9 +145,10 @@ export function plGetPlan(input: PlGetPlanInput): ReturnType<typeof successRespo
 /**
  * pl_feedback - Submit feedback for the latest plan
  * Allowed states: pending_review
+ * Supports optimistic concurrency via optional plan_version parameter
  */
 export function plFeedback(input: PlFeedbackInput) {
-  const { session_id, rating, content } = input;
+  const { session_id, rating, content, plan_version } = input;
 
   if (!isNonEmptyString(session_id)) {
     return errorResponse('session_id is required');
@@ -176,6 +177,18 @@ export function plFeedback(input: PlFeedbackInput) {
   const latestPlan = state.getLatestPlan(session);
   if (!latestPlan) {
     return errorResponse('No plan to provide feedback on');
+  }
+
+  // Optimistic concurrency check: verify plan_version if provided
+  if (plan_version !== undefined) {
+    if (typeof plan_version !== 'number' || !Number.isInteger(plan_version)) {
+      return errorResponse('plan_version must be an integer');
+    }
+    if (plan_version !== latestPlan.version) {
+      return errorResponse(
+        `Plan version mismatch: expected=${latestPlan.version}, provided=${plan_version}. Another agent may have submitted a new plan.`
+      );
+    }
   }
 
   // Add feedback
