@@ -1,6 +1,6 @@
 {
   "name": "@joseph0926/plan-loop",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "MCP server for Claude-Code and Codex async collaboration with CLI setup",
   "type": "module",
   "main": "dist/index.js",
