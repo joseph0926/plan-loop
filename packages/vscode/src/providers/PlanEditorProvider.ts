@@ -6,10 +6,20 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { getWebviewHtml } from '../webview/planEditor';
-import { state, getStateDir, type Session, type Rating, type Feedback } from '@joseph0926/plan-loop-core';
+import { state, getStateDir, plFeedback, type Session, type Rating } from '@joseph0926/plan-loop-core';
 
 // Re-export Session type for backwards compatibility with commands/index.ts
 export type { Session } from '@joseph0926/plan-loop-core';
+
+// Error patterns from core (tools.ts L188-190)
+const ERROR_PATTERNS = {
+  VERSION_MISMATCH: 'Plan version mismatch',
+} as const;
+
+const USER_MESSAGES = {
+  VERSION_MISMATCH_WARNING: 'Plan Loop: 새 플랜이 제출되었습니다. 새로고침 후 다시 검토해주세요.',
+  VERSION_MISMATCH_ERROR: 'Plan version changed. Please refresh and re-review.',
+} as const;
 
 // Message types
 type ExtToWebview =
@@ -27,6 +37,7 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
   private _currentSession?: Session;
+  private _viewedPlanVersion?: number;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -55,6 +66,8 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
    */
   public showSession(session: Session): void {
     this._currentSession = session;
+    const latestPlan = session.plans[session.plans.length - 1];
+    this._viewedPlanVersion = latestPlan?.version;
 
     if (this._view) {
       this._view.webview.html = getWebviewHtml(this._view.webview, session);
@@ -78,6 +91,7 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
    */
   public clear(): void {
     this._currentSession = undefined;
+    this._viewedPlanVersion = undefined;
     if (this._view) {
       this._view.webview.html = getWebviewHtml(this._view.webview, null);
     }
@@ -123,54 +137,44 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      // Load fresh session data
-      const session = this._loadSession(this._currentSession.id);
-      if (!session) {
-        this._sendFeedbackResult(false, 'Session not found');
-        return;
-      }
-
-      // Get latest plan version
-      const latestPlan = session.plans[session.plans.length - 1];
-      if (!latestPlan) {
-        this._sendFeedbackResult(false, 'No plan to review');
-        return;
-      }
-
       const trimmedContent = (content ?? '').trim();
       const finalContent = trimmedContent.length > 0 ? trimmedContent : this._getAutoFeedback(rating);
 
-      // Create feedback
-      const feedback: Feedback = {
-        planVersion: latestPlan.version,
+      // Use core plFeedback with optimistic concurrency control
+      const result = plFeedback({
+        session_id: this._currentSession.id,
         rating,
         content: finalContent,
-        submittedAt: new Date().toISOString(),
-      };
+        plan_version: this._viewedPlanVersion,
+      });
 
-      // Update session
-      session.feedbacks.push(feedback);
-      session.updatedAt = new Date().toISOString();
+      // Handle errors
+      if ('isError' in result && result.isError) {
+        const errorText = result.content[0]?.text || 'Unknown error';
 
-      // Update status based on rating
-      if (rating === '🟢') {
-        session.status = 'approved';
-      } else {
-        session.status = 'pending_revision';
-        session.iteration += 1;
-
-        // Check if max iterations reached
-        if (session.iteration >= session.maxIterations) {
-          session.status = 'exhausted';
+        // Check for version mismatch (core tools.ts L188-190)
+        if (errorText.includes(ERROR_PATTERNS.VERSION_MISMATCH)) {
+          const selection = await vscode.window.showWarningMessage(
+            USER_MESSAGES.VERSION_MISMATCH_WARNING,
+            'Refresh'
+          );
+          if (selection === 'Refresh') {
+            this.refresh();
+          }
+          this._sendFeedbackResult(false, USER_MESSAGES.VERSION_MISMATCH_ERROR);
+          return;
         }
+
+        this._sendFeedbackResult(false, errorText);
+        return;
       }
 
-      // Save session (atomic write)
-      this._saveSession(session);
-
-      // Update UI
-      this._currentSession = session;
-      this.showSession(session);
+      // Success: reload session and update UI
+      const updatedSession = this._loadSession(this._currentSession.id);
+      if (updatedSession) {
+        this._currentSession = updatedSession;
+        this.showSession(updatedSession);
+      }
 
       // Send success result
       this._sendFeedbackResult(true);
@@ -178,14 +182,14 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
       // Show notification with copy button for non-approved states
       const ratingLabel = rating === '🟢' ? 'Approved' : rating === '🟡' ? 'Minor revision requested' : 'Major revision requested';
 
-      if (rating !== '🟢') {
+      if (rating !== '🟢' && updatedSession) {
         // For revision states, offer to copy the feedback check command
-        const command = `pl_get_feedback({ session_id: "${session.id}" })`;
-        const result = await vscode.window.showInformationMessage(
+        const command = `pl_get_feedback({ session_id: "${updatedSession.id}" })`;
+        const notifyResult = await vscode.window.showInformationMessage(
           `Plan Loop: ${ratingLabel}`,
           'Copy Command'
         );
-        if (result === 'Copy Command') {
+        if (notifyResult === 'Copy Command') {
           try {
             await vscode.env.clipboard.writeText(command);
             vscode.window.showInformationMessage('명령어가 클립보드에 복사되었습니다');
