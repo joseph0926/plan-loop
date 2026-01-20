@@ -108,6 +108,27 @@
           "type": "boolean",
           "default": false,
           "description": "세션 생성 시 명령어를 자동으로 클립보드에 복사합니다. 비활성화 시 복사 버튼을 통해 수동으로 복사할 수 있습니다."
+        },
+        "planLoop.promptTemplates.plan": {
+          "type": "string",
+          "scope": "window",
+          "markdownDescription": "세션 생성 후 Claude에 전달할 프롬프트 템플릿.\n\n**변수**: `{{session_id}}`, `{{goal}}`\n\n**이스케이프**: `{{{리터럴}}}` 사용 (JSON 등 중괄호 포함 시)",
+          "default": "세션 {{session_id}}에 대한 계획을 작성하세요.\n\n목표: {{goal}}\n\n완료 후 pl_submit({{{session_id: \"{{session_id}}\", plan: \"작성한 계획\"}}})을 호출하세요.",
+          "editPresentation": "multilineText"
+        },
+        "planLoop.promptTemplates.review": {
+          "type": "string",
+          "scope": "window",
+          "markdownDescription": "pending_review 상태에서 Codex에 전달할 리뷰 프롬프트.\n\n**변수**: `{{session_id}}`, `{{plan_version}}`, `{{goal}}`\n\n**이스케이프**: `{{{리터럴}}}` 사용",
+          "default": "pl_get_plan({{{session_id: \"{{session_id}}\"}}})로 계획(v{{plan_version}})을 확인하고 리뷰하세요.\n\n목표: {{goal}}\n\n리뷰 후 pl_feedback({{{session_id: \"{{session_id}}\", rating: \"🟢|🟡|🔴\", content: \"피드백 내용\", plan_version: {{plan_version}}}}})으로 피드백을 제출하세요.",
+          "editPresentation": "multilineText"
+        },
+        "planLoop.promptTemplates.feedback": {
+          "type": "string",
+          "scope": "window",
+          "markdownDescription": "pending_revision 상태에서 수정 요청 프롬프트.\n\n**변수**: `{{session_id}}`, `{{feedback_content}}`, `{{plan_version}}`, `{{goal}}`\n\n**이스케이프**: `{{{리터럴}}}` 사용",
+          "default": "피드백을 반영하여 계획(v{{plan_version}})을 수정하세요.\n\n세션 ID: {{session_id}}\n목표: {{goal}}\n\n피드백:\n{{feedback_content}}\n\n수정 완료 후 pl_submit({{{session_id: \"{{session_id}}\", plan: \"수정된 계획\"}}})을 호출하세요.",
+          "editPresentation": "multilineText"
         }
       }
     }
@@ -119,14 +140,16 @@
     "watch": "pnpm run build -- --watch",
     "package": "pnpm run bundle && vsce package --no-dependencies",
     "publish": "pnpm run bundle && vsce publish --no-dependencies",
-    "test": "echo 'No tests configured yet'"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.20.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
   },
   "dependencies": {
     "@joseph0926/plan-loop-core": "workspace:*"

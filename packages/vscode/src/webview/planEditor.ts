@@ -4,6 +4,13 @@
  */
 
 import * as vscode from 'vscode';
+import {
+  getDisplayPrompt,
+  buildPlanPrompt,
+  buildReviewPrompt,
+  buildFeedbackPrompt,
+  type Session as PromptSession,
+} from '../prompts/promptSmith';
 
 // Session types (duplicated to avoid circular imports)
 type SessionStatus = 'drafting' | 'pending_review' | 'pending_revision' | 'approved' | 'exhausted';
@@ -720,6 +727,8 @@ function getScript(nonce: string): string {
 
       setupCopyButton('copy-session-id', 'session-id-text');
       setupCopyButton('copy-prompt', 'example-prompt-text');
+      setupCopyButton('copy-review-prompt', 'review-prompt-text');
+      setupCopyButton('copy-revision-prompt', 'revision-prompt-text');
 
       // Handle messages from extension
       window.addEventListener('message', (event) => {
@@ -879,8 +888,22 @@ function getSessionHtml(session: Session): string {
   let feedbackHtml = '';
 
   if (session.status === 'pending_review') {
+    const reviewPrompt = buildReviewPrompt(session as unknown as PromptSession);
     feedbackHtml = `
       <div class="status-guide">📝 Plan이 도착했습니다. 아래에서 리뷰해주세요.</div>
+      <div class="example-prompt" style="margin-bottom: 12px;">
+        <span class="label">Codex 리뷰 프롬프트:</span>
+        <div class="prompt-text">
+          <pre id="review-prompt-text" style="white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 11px;">${escapeHtml(reviewPrompt)}</pre>
+          <button
+            class="copy-btn"
+            id="copy-review-prompt"
+            title="리뷰 프롬프트 복사"
+            aria-label="리뷰 프롬프트를 클립보드에 복사"
+            tabindex="0"
+          >📋</button>
+        </div>
+      </div>
       <div class="feedback-panel">
         <div class="feedback-label">Rate this plan:</div>
         <div class="rating-buttons">
@@ -911,12 +934,26 @@ function getSessionHtml(session: Session): string {
       </div>
     `;
   } else if (session.status === 'pending_revision') {
+    const revisionPrompt = buildFeedbackPrompt(session as unknown as PromptSession);
     const lastFeedbackSummary = latestFeedback
       ? `${latestFeedback.rating} ${latestFeedback.content.substring(0, 100)}${latestFeedback.content.length > 100 ? '...' : ''}`
       : '';
     feedbackHtml = `
+      <div class="status-guide">✏️ 피드백이 전달되었습니다. Claude에게 수정 요청하세요.</div>
+      <div class="example-prompt" style="margin-bottom: 12px;">
+        <span class="label">Claude 수정 프롬프트:</span>
+        <div class="prompt-text">
+          <pre id="revision-prompt-text" style="white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 11px;">${escapeHtml(revisionPrompt)}</pre>
+          <button
+            class="copy-btn"
+            id="copy-revision-prompt"
+            title="수정 프롬프트 복사"
+            aria-label="수정 프롬프트를 클립보드에 복사"
+            tabindex="0"
+          >📋</button>
+        </div>
+      </div>
       <div class="status-message awaiting">
-        ⏳ 피드백 전달 완료! Claude가 plan 수정 중...<br>
         <small>Last feedback: ${escapeHtml(lastFeedbackSummary)}</small>
       </div>
     `;
@@ -933,7 +970,7 @@ function getSessionHtml(session: Session): string {
       </div>
     `;
   } else if (session.status === 'drafting') {
-    const examplePrompt = `pl_submit({ session_id: "${session.id}", plan: "여기에 plan 작성" })`;
+    const templatePrompt = buildPlanPrompt(session as unknown as PromptSession);
     feedbackHtml = `
       <div class="drafting-guide">
         <div class="guide-header">🎯 Goal 설정 완료!</div>
@@ -959,14 +996,14 @@ function getSessionHtml(session: Session): string {
         </div>
 
         <div class="example-prompt">
-          <span class="label">예시 프롬프트:</span>
+          <span class="label">Claude 프롬프트:</span>
           <div class="prompt-text">
-            <code id="example-prompt-text">${escapeHtml(examplePrompt)}</code>
+            <pre id="example-prompt-text" style="white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 11px;">${escapeHtml(templatePrompt)}</pre>
             <button
               class="copy-btn"
               id="copy-prompt"
-              title="예시 프롬프트 복사"
-              aria-label="예시 프롬프트를 클립보드에 복사"
+              title="프롬프트 복사"
+              aria-label="프롬프트를 클립보드에 복사"
               tabindex="0"
             >📋</button>
           </div>

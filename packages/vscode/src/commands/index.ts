@@ -8,6 +8,7 @@ import * as path from 'path';
 import { state, type Session } from '@joseph0926/plan-loop-core';
 import { SessionTreeProvider, SessionItem } from '../providers/SessionTreeProvider';
 import { PlanEditorProvider } from '../providers/PlanEditorProvider';
+import { buildPlanPrompt, type Session as PromptSession } from '../prompts/promptSmith';
 
 export function registerCommands(
   context: vscode.ExtensionContext,
@@ -51,8 +52,8 @@ export function registerCommands(
         return;
       }
 
-      // Generate command for Claude
-      const command = `pl_submit({ session_id: "${session.id}", plan: "여기에 plan 작성" })`;
+      // Generate prompt using template
+      const command = buildPlanPrompt(session as unknown as PromptSession);
 
       // Check auto copy setting
       const config = vscode.workspace.getConfiguration('planLoop');
