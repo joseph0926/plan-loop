@@ -180,7 +180,7 @@ export class PlanEditorProvider implements vscode.WebviewViewProvider {
 
       if (rating !== '🟢') {
         // For revision states, offer to copy the feedback check command
-        const command = `pl_get_feedback(session_id: "${session.id}")`;
+        const command = `pl_get_feedback({ session_id: "${session.id}" })`;
         const result = await vscode.window.showInformationMessage(
           `Plan Loop: ${ratingLabel}`,
           'Copy Command'
