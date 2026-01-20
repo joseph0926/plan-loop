@@ -139,3 +139,5 @@ cp .mcp.json.example .mcp.json
 ## License
 
 MIT
+
+[![MCP Badge](https://lobehub.com/badge/mcp/joseph0926-plan-loop)](https://lobehub.com/mcp/joseph0926-plan-loop)
