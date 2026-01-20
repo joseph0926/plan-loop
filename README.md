@@ -58,10 +58,12 @@ args = ["-y", "@joseph0926/plan-loop"]
 
 ```text
 pl_start({ goal: "Plan a login feature" })
-pl_submit({ session_id: "abc123", plan: "1. ..." })
-pl_get_plan({ session_id: "abc123" })
-pl_feedback({ session_id: "abc123", rating: "🟢", content: "LGTM" })
+pl_submit({ session_id: "550e8400-e29b-41d4-a716-446655440000", plan: "1. ..." })
+pl_get_plan({ session_id: "550e8400-e29b-41d4-a716-446655440000" })
+pl_feedback({ session_id: "550e8400-e29b-41d4-a716-446655440000", rating: "🟢", content: "LGTM" })
 ```
+
+**Note**: `session_id` must be UUIDv4 format. Input is case-insensitive and normalized to lowercase internally.
 
 ## Tool list
 
