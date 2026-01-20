@@ -196,10 +196,21 @@ pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
 
 ## 설계 결정
 
-### 최신 plan 자동 매핑
-- `pl_feedback`은 항상 최신 plan에 매핑됨
-- planVersion 파라미터 없음 (단순화)
-- **Trade-off**: 동시 호출 시 race condition 가능 → 운영 규칙으로 관리
+### plan_version을 통한 Optimistic Concurrency
+- `pl_feedback`은 선택적 `plan_version` 파라미터 지원
+- 제공 시: 현재 plan version과 비교하여 불일치 시 에러 반환
+- 미제공 시: 기존 동작 유지 (최신 plan에 자동 매핑, 하위 호환성)
+
+```text
+# plan_version 없이 (기본 동작)
+pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM" })
+
+# plan_version으로 race condition 방지
+pl_feedback({ session_id: "...", rating: "🟢", content: "LGTM", plan_version: 1 })
+# → version 불일치 시: "Plan version mismatch: expected=2, provided=1"
+```
+
+**참고**: `plan_version`은 1-based 정수입니다 (첫 번째 plan은 version=1).
 
 ### 역할 구분
 - 서버는 호출자를 검증하지 않음

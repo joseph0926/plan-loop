@@ -79,6 +79,7 @@ export interface PlFeedbackInput {
   session_id: string;
   rating: Rating;
   content: string;
+  plan_version?: number;  // Optimistic concurrency: 제공 시 현재 plan version과 비교
 }
 
 export interface PlGetFeedbackInput {

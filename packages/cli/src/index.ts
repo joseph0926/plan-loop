@@ -97,6 +97,10 @@ const TOOL_DEFINITIONS = [
           type: 'string',
           description: 'Feedback content',
         },
+        plan_version: {
+          type: 'integer',
+          description: 'Expected plan version (1-based) for optimistic concurrency check. If provided and mismatched, returns error with current version.',
+        },
       },
       required: ['session_id', 'rating', 'content'],
     },
