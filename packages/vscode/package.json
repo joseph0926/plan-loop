@@ -129,6 +129,13 @@
           "markdownDescription": "pending_revision 상태에서 수정 요청 프롬프트.\n\n**변수**: `{{session_id}}`, `{{feedback_content}}`, `{{plan_version}}`, `{{goal}}`\n\n**이스케이프**: `{{{리터럴}}}` 사용",
           "default": "피드백을 반영하여 계획(v{{plan_version}})을 수정하세요.\n\n세션 ID: {{session_id}}\n목표: {{goal}}\n\n피드백:\n{{feedback_content}}\n\n수정 완료 후 pl_submit({{{session_id: \"{{session_id}}\", plan: \"수정된 계획\"}}})을 호출하세요.",
           "editPresentation": "multilineText"
+        },
+        "planLoop.goalEditor.defaultMaxIterations": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "새 세션 생성 시 기본 최대 반복 횟수"
         }
       }
     }

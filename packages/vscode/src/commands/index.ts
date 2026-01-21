@@ -9,6 +9,7 @@ import { state, type Session } from '@joseph0926/plan-loop-core';
 import { SessionTreeProvider, SessionItem } from '../providers/SessionTreeProvider';
 import { PlanEditorProvider } from '../providers/PlanEditorProvider';
 import { buildPlanPrompt, type Session as PromptSession } from '../prompts/promptSmith';
+import { showGoalEditor } from '../ui/GoalEditorPanel';
 
 export function registerCommands(
   context: vscode.ExtensionContext,
@@ -26,24 +27,18 @@ export function registerCommands(
   // New session command
   context.subscriptions.push(
     vscode.commands.registerCommand('planLoop.newSession', async () => {
-      const goal = await vscode.window.showInputBox({
-        prompt: 'Enter the goal for this planning session',
-        placeHolder: 'e.g., Implement user authentication',
-        validateInput: (value) => {
-          if (!value || value.trim() === '') {
-            return 'Goal is required';
-          }
-          return null;
-        },
-      });
+      const outcome = await showGoalEditor(context);
 
-      if (!goal) {
-        return; // User cancelled
+      // 'cancelled' 또는 'already_open' → 아무 동작 없음
+      if (outcome.status !== 'submitted') {
+        return;
       }
+
+      const { goal, maxIterations } = outcome.data;
 
       let session: Session;
       try {
-        session = state.create(goal.trim());
+        session = state.create(goal, maxIterations);
         sessionTreeProvider.refresh();
       } catch (error) {
         vscode.window.showErrorMessage(
